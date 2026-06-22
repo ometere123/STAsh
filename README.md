@@ -39,8 +39,8 @@ Frontend (Next.js)  →  GenLayer Contract (source of truth)
 ## Contract
 
 - **Network:** GenLayer StudioNet (Chain ID: 61999)
-- **Contract Address:** `0xf5605a93F06B21456bb967ac9eebb037b1b2028D`
-- **Explorer:** https://explorer-studio.genlayer.com/address/0xf5605a93F06B21456bb967ac9eebb037b1b2028D
+- **Contract Address:** `0x7C0465AA895Bb77898bDdc2D8014B3eD5bdF1e36`
+- **Explorer:** https://explorer-studio.genlayer.com/address/0x7C0465AA895Bb77898bDdc2D8014B3eD5bdF1e36
 
 ## Local Development
 
