@@ -4,7 +4,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-06-01",
   "vars": {
-    "ALLOWED_ORIGIN": "*",
+    "ALLOWED_ORIGIN": "https://st-ash.vercel.app",
     "CACHE_TTL_SECONDS": "300"
   }
 }
