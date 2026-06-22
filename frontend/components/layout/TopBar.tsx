@@ -31,15 +31,20 @@ export function TopBar() {
           </button>
         )}
         {address ? (
-          <button
-            onClick={disconnect}
-            className="flex items-center gap-2 border border-panel-graphite rounded px-3 py-1.5 hover:border-muted-steel transition-colors"
-          >
-            <span className="status-led-green" />
-            <span className="font-mono text-xs text-panel-white">
-              {shortAddress(address)}
+          <>
+            <span className="flex items-center gap-2 border border-panel-graphite rounded px-3 py-1.5">
+              <span className="status-led-green" />
+              <span className="font-mono text-xs text-panel-white">
+                {shortAddress(address)}
+              </span>
             </span>
-          </button>
+            <button
+              onClick={disconnect}
+              className="btn-secondary text-xs py-1.5 px-3"
+            >
+              Disconnect
+            </button>
+          </>
         ) : (
           <button
             onClick={connect}

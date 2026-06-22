@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { connectWallet, getChainId, switchToStudioNet } from "@/lib/chain";
 import { CHAIN_ID } from "@/lib/constants";
 
+const WALLET_CONNECTED_KEY = "slash.wallet.connected";
+
 interface WalletState {
   address: string | null;
   chainId: number | null;
@@ -42,6 +44,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       const cid = await getChainId();
       setAddress(addr);
       setChainId(cid);
+      window.localStorage.setItem(WALLET_CONNECTED_KEY, "true");
     } finally {
       setIsConnecting(false);
     }
@@ -50,6 +53,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const disconnect = useCallback(() => {
     setAddress(null);
     setChainId(null);
+    window.localStorage.removeItem(WALLET_CONNECTED_KEY);
   }, []);
 
   const switchChain = useCallback(async () => {
@@ -62,14 +66,39 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined" || !window.ethereum) return;
 
     const handleAccountsChanged = (accounts: string[]) => {
-      setAddress(accounts[0] || null);
+      const nextAddress = accounts[0] || null;
+      setAddress(nextAddress);
+      if (nextAddress) {
+        window.localStorage.setItem(WALLET_CONNECTED_KEY, "true");
+      } else {
+        window.localStorage.removeItem(WALLET_CONNECTED_KEY);
+      }
     };
     const handleChainChanged = (cid: string) => {
       setChainId(parseInt(cid, 16));
     };
 
+    const restoreConnection = async () => {
+      if (window.localStorage.getItem(WALLET_CONNECTED_KEY) !== "true") return;
+
+      try {
+        const accounts: string[] = await window.ethereum.request({ method: "eth_accounts" });
+        const nextAddress = accounts[0] || null;
+        if (!nextAddress) {
+          window.localStorage.removeItem(WALLET_CONNECTED_KEY);
+          return;
+        }
+
+        setAddress(nextAddress);
+        setChainId(await getChainId());
+      } catch {
+        window.localStorage.removeItem(WALLET_CONNECTED_KEY);
+      }
+    };
+
     window.ethereum.on("accountsChanged", handleAccountsChanged);
     window.ethereum.on("chainChanged", handleChainChanged);
+    restoreConnection();
 
     return () => {
       window.ethereum?.removeListener("accountsChanged", handleAccountsChanged);
