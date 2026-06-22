@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "slash-evidence-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-01",
+  "vars": {
+    "ALLOWED_ORIGIN": "*",
+    "CACHE_TTL_SECONDS": "300"
+  }
+}

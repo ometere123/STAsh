@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-outage-black text-panel-white font-body antialiased;
+  }
+
+  ::selection {
+    @apply bg-signal-green/20 text-signal-green;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-outage-black;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-panel-graphite rounded-full;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-rack-grey border border-panel-graphite rounded-lg;
+  }
+
+  .panel-dark {
+    @apply bg-outage-black border border-panel-graphite rounded-lg;
+  }
+
+  .btn-primary {
+    @apply bg-signal-green text-outage-black font-heading font-semibold px-4 py-2 rounded
+           hover:bg-signal-green/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply border border-muted-steel text-panel-white font-heading font-medium px-4 py-2 rounded
+           hover:border-panel-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply bg-failure-red/10 text-failure-red border border-failure-red/30 font-heading font-medium px-4 py-2 rounded
+           hover:bg-failure-red/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .input-field {
+    @apply bg-outage-black border border-panel-graphite rounded px-3 py-2 text-panel-white font-mono text-sm
+           focus:border-signal-green focus:outline-none focus:ring-1 focus:ring-signal-green/30 w-full;
+  }
+
+  .label-text {
+    @apply text-muted-steel font-label text-xs uppercase tracking-wider;
+  }
+
+  .metric-large {
+    @apply font-mono text-2xl font-semibold tracking-tight;
+  }
+
+  .metric-small {
+    @apply font-mono text-sm;
+  }
+
+  .status-led {
+    @apply w-2 h-2 rounded-full inline-block;
+  }
+
+  .status-led-green {
+    @apply status-led bg-signal-green shadow-[0_0_6px_rgba(56,252,166,0.5)];
+  }
+
+  .status-led-amber {
+    @apply status-led bg-incident-amber shadow-[0_0_6px_rgba(255,176,32,0.5)];
+  }
+
+  .status-led-red {
+    @apply status-led bg-failure-red shadow-[0_0_6px_rgba(255,77,94,0.5)];
+  }
+
+  .diagonal-stripe {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 4px,
+      rgba(255, 176, 32, 0.08) 4px,
+      rgba(255, 176, 32, 0.08) 8px
+    );
+  }
+}
