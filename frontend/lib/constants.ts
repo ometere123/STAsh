@@ -3,6 +3,10 @@ export const RPC_URL = process.env.NEXT_PUBLIC_GENLAYER_RPC_URL || "https://stud
 export const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0xf5605a93F06B21456bb967ac9eebb037b1b2028D";
 export const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL || "";
 export const EXPLORER_URL = process.env.NEXT_PUBLIC_EXPLORER_URL || "https://explorer-studio.genlayer.com";
+export const ADMIN_ADDRESSES = (process.env.NEXT_PUBLIC_ADMIN_ADDRESSES || "")
+  .split(",")
+  .map((address) => address.trim().toLowerCase())
+  .filter(Boolean);
 
 export const STUDIONET_CHAIN = {
   id: CHAIN_ID,
