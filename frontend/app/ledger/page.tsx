@@ -85,11 +85,11 @@ export default function LedgerPage() {
           <Link key={c.id} href={`/replay/${c.id}`} className="panel p-4 flex items-center gap-4 hover:border-signal-green/20 transition-colors block">
             <span className="font-mono text-sm w-16">#{c.id}</span>
             <span className={`font-label text-xs uppercase w-20 ${statusColor(c.status)}`}>{c.status}</span>
-            <span className="text-xs text-muted-steel flex-1 truncate">{c.incident_url || "—"}</span>
+            <span className="text-xs text-muted-steel flex-1 truncate">{c.incident_url || "-"}</span>
             <span className="text-xs text-consensus-violet w-28">{c.verdict || "pending"}</span>
-            <span className="text-xs w-16">{c.payout_band || "—"}</span>
+            <span className="text-xs w-16">{c.payout_band || "-"}</span>
             <span className="metric-small w-24 text-right">
-              {c.payout_wei !== "0" ? `${weiToGen(c.payout_wei)} GEN` : "—"}
+              {c.payout_wei !== "0" ? `${weiToGen(c.payout_wei)} GEN` : "-"}
             </span>
           </Link>
         ))}

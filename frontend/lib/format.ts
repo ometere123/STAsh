@@ -31,7 +31,7 @@ export function shortHash(hash: string): string {
 }
 
 export function formatTimestamp(ts: number): string {
-  if (!ts) return "—";
+  if (!ts) return "-";
   return new Date(ts * 1000).toLocaleString();
 }
 

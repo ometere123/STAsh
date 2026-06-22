@@ -95,7 +95,7 @@ STEPS = [
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("SLAsh Smoke Test — Full Flow")
+    print("SLAsh Smoke Test: Full Flow")
     print("Contract: 0x1ed9F0E59D0E8B2c5Ae92606f9Dd60Af018036f3")
     print("=" * 60)
     print()

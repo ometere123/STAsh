@@ -95,7 +95,7 @@ export default function ClaimsPage() {
           <select value={policyId} onChange={(e) => setPolicyId(e.target.value)} className="input-field mt-1">
             <option value="">Select active policy</option>
             {activePolicies.map((p) => (
-              <option key={p.id} value={p.id}>Policy #{p.id} — Pool #{p.pool_id}</option>
+              <option key={p.id} value={p.id}>Policy #{p.id} - Pool #{p.pool_id}</option>
             ))}
           </select>
         </div>

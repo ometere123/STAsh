@@ -96,7 +96,7 @@ function CoverageContent() {
             <option value="">Select a pool</option>
             {pools.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.service_name} — {weiToGen(p.available_wei)} GEN available
+                {p.service_name} - {weiToGen(p.available_wei)} GEN available
               </option>
             ))}
           </select>

@@ -6,7 +6,7 @@ import { NavRail } from "@/components/layout/NavRail";
 import { TopBar } from "@/components/layout/TopBar";
 
 export const metadata: Metadata = {
-  title: "SLAsh — Trustless Outage Cover",
+  title: "SLAsh: Trustless Outage Cover",
   description:
     "Fixed payout cover for developer-critical internet dependencies. Settled by GenLayer validators from public incident evidence.",
 };

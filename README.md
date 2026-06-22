@@ -1,4 +1,4 @@
-# SLAsh — Trustless Outage Cover
+# SLAsh: Trustless Outage Cover
 
 Trustless parametric outage cover for developer-critical internet dependencies. Settled by GenLayer validators from real public incident evidence.
 
@@ -104,7 +104,7 @@ Prints step-by-step instructions for the full flow: create pools → underwrite 
 
 - Cloudflare Worker is **not trusted** for payout decisions
 - GenLayer validators independently fetch public evidence during review
-- Only public evidence is supported — no private screenshots or logs
+- Only public evidence is supported, no private screenshots or logs
 - Locked coverage cannot be withdrawn by underwriters
 - Claims cannot be settled twice
 - 24-hour waiting period after policy purchase before claims are eligible
@@ -112,7 +112,7 @@ Prints step-by-step instructions for the full flow: create pools → underwrite 
 ## Limitations
 
 - Experimental fixed payout cover, not licensed insurance
-- Public evidence only — no private uptime proof
-- No exact loss reimbursement — fixed payouts only
+- Public evidence only, no private uptime proof
+- No exact loss reimbursement, fixed payouts only
 - MVP supports 5 services only
 - Manual pricing model (5% of coverage per 30 days)

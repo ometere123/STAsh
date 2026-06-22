@@ -14,7 +14,7 @@ export default function SettingsPage() {
     { label: "Contract", value: CONTRACT_ADDRESS || "Not configured" },
     { label: "Worker", value: WORKER_URL || "Not configured" },
     { label: "Wallet", value: address || "Not connected" },
-    { label: "Chain ID", value: chainId ? String(chainId) : "—" },
+    { label: "Chain ID", value: chainId ? String(chainId) : "-" },
     { label: "Correct Chain", value: isCorrectChain ? "Yes" : "No" },
   ];
 

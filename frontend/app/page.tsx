@@ -20,7 +20,7 @@ export default function LandingPage() {
         <p className="text-lg text-muted-steel max-w-xl leading-relaxed">
           SLAsh lets you buy fixed payout cover against qualifying outages from
           public internet dependencies. Validators settle claims from real public
-          evidence — not screenshots, not oracles, not insurers.
+          evidence, not screenshots, not oracles, not insurers.
         </p>
 
         <div className="flex gap-4 pt-4">

@@ -63,4 +63,4 @@ if __name__ == "__main__":
     print("  pool_id: 1")
     print("  Value: 1000000000000000000 (1 GEN)")
     print()
-    print("Then verify with get_pool_ids() — should return [1, 2, 3, 4, 5]")
+    print("Then verify with get_pool_ids(): should return [1, 2, 3, 4, 5]")

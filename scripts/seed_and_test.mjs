@@ -1,5 +1,5 @@
 /**
- * SLAsh — Seed Pools + Underwrite + Full Smoke Test
+ * SLAsh: Seed Pools + Underwrite + Full Smoke Test
  *
  * Usage:
  *   set PRIVATE_KEY=0xYourPrivateKeyHere
@@ -37,7 +37,7 @@ const client = createClient({
 const txHashes = [];
 
 async function waitTx(hash, label) {
-  console.log(`  ⏳ ${label} — waiting for tx ${hash.slice(0, 16)}...`);
+  console.log(`  ⏳ ${label} - waiting for tx ${hash.slice(0, 16)}...`);
   try {
     const receipt = await client.waitForTransactionReceipt({
       hash,
@@ -45,11 +45,11 @@ async function waitTx(hash, label) {
       retries: 80,
       interval: 3000,
     });
-    console.log(`  ✅ ${label} — confirmed`);
+    console.log(`  ✅ ${label} - confirmed`);
     txHashes.push({ label, hash });
     return receipt;
   } catch (e) {
-    console.log(`  ⚠️  ${label} — may still be pending: ${e.message}`);
+    console.log(`  ⚠️  ${label} - may still be pending: ${e.message}`);
     txHashes.push({ label, hash, note: "pending/timeout" });
     return null;
   }
@@ -83,7 +83,7 @@ const POOLS = [
 
 async function main() {
   console.log("═══════════════════════════════════════════");
-  console.log("  SLAsh — Seed + Underwrite + Smoke Test");
+  console.log("  SLAsh: Seed + Underwrite + Smoke Test");
   console.log("  Contract:", CONTRACT);
   console.log("═══════════════════════════════════════════\n");
 
@@ -164,7 +164,7 @@ async function main() {
   // ── Step 4: File Claim ────────────────────────────────
   console.log("── Filing claim against policy ──\n");
   console.log("  ℹ️  NOTE: Claim will likely be denied because the 24h waiting period");
-  console.log("  hasn't passed. This is expected — it proves the full on-chain flow.\n");
+  console.log("  hasn't passed. This is expected, it proves the full on-chain flow.\n");
 
   let claimId;
   try {
