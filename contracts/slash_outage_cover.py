@@ -4,6 +4,7 @@
 from genlayer import *
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 import json
 
 
@@ -60,6 +61,16 @@ POLICY_CLAIMED = "claimed"
 POLICY_PAID = "paid"
 POLICY_DENIED = "denied"
 POLICY_CANCELLED = "cancelled"
+
+
+def _domain_of(url: str) -> str:
+    try:
+        host = urlparse(url).netloc.lower()
+    except Exception:
+        return ""
+    if host.startswith("www."):
+        host = host[4:]
+    return host
 
 CLAIM_FILED = "filed"
 CLAIM_REVIEWING = "reviewing"
@@ -402,6 +413,10 @@ class SlashOutageCover(gl.Contract):
             raise gl.UserError("INVALID_INCIDENT_URL")
         if len(affected_component) == 0 or len(affected_component) > MAX_COMPONENT_CHARS:
             raise gl.UserError("INVALID_COMPONENT")
+
+        pool_for_claim = self.pools[policy.pool_id]
+        if _domain_of(incident_url) != _domain_of(pool_for_claim.status_url):
+            raise gl.UserError("INCIDENT_URL_NOT_ON_STATUS_DOMAIN")
 
         self.claim_count = self.claim_count + u256(1)
         claim_id = self.claim_count

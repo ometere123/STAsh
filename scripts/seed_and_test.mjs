@@ -19,7 +19,7 @@ import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 
-const CONTRACT = "0x7C0465AA895Bb77898bDdc2D8014B3eD5bdF1e36";
+const CONTRACT = "0x6D5108C7643Dd4eFc5b769c59B5Ae3A6aE64c1DF";
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 if (!PRIVATE_KEY) {

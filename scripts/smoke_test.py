@@ -2,7 +2,7 @@
 Smoke test instructions for the full SLAsh flow.
 Execute each step in GenLayer Studio against the deployed contract.
 
-Contract: 0x7C0465AA895Bb77898bDdc2D8014B3eD5bdF1e36
+Contract: 0x6D5108C7643Dd4eFc5b769c59B5Ae3A6aE64c1DF
 """
 
 STEPS = [
@@ -96,7 +96,7 @@ STEPS = [
 if __name__ == "__main__":
     print("=" * 60)
     print("SLAsh Smoke Test: Full Flow")
-    print("Contract: 0x7C0465AA895Bb77898bDdc2D8014B3eD5bdF1e36")
+    print("Contract: 0x6D5108C7643Dd4eFc5b769c59B5Ae3A6aE64c1DF")
     print("=" * 60)
     print()
 

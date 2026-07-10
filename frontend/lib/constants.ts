@@ -1,6 +1,6 @@
 export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_GENLAYER_CHAIN_ID || 61999);
 export const RPC_URL = process.env.NEXT_PUBLIC_GENLAYER_RPC_URL || "https://studio.genlayer.com/api";
-export const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x7C0465AA895Bb77898bDdc2D8014B3eD5bdF1e36";
+export const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x6D5108C7643Dd4eFc5b769c59B5Ae3A6aE64c1DF";
 export const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL || "";
 export const EXPLORER_URL = process.env.NEXT_PUBLIC_EXPLORER_URL || "https://explorer-studio.genlayer.com";
 export const ADMIN_ADDRESSES = (process.env.NEXT_PUBLIC_ADMIN_ADDRESSES || "")
