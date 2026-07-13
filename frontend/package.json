@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "wallets:generate": "node generate_test_wallets.mjs",
+    "test:wallet-flow": "node test_suite.mjs",
+    "test:live-certification": "node live_certification.mjs",
+    "test:finalize-certification": "node finalize_certification.mjs"
   },
   "dependencies": {
     "next": "^14.2.0",

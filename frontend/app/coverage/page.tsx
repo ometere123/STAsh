@@ -61,6 +61,7 @@ function CoverageContent() {
         if (premiumWei < BigInt(10000000000000000)) premiumWei = BigInt(10000000000000000);
       }
       const hash = await buyPolicy(
+        address,
         parseInt(poolId),
         coverageWei,
         parseInt(durationDays),

@@ -1,39 +1,71 @@
-import { createClient, createAccount } from "genlayer-js";
+import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 import { CONTRACT_ADDRESS } from "./constants";
 import type { Pool, Policy, Claim, ProtocolStats, UnderwriterPosition } from "./types";
 
-let clientInstance: ReturnType<typeof createClient> | null = null;
-let initialized = false;
+// Reads never need a signer, so a single unauthenticated client is reused
+// for every read call.
+let readClientInstance: ReturnType<typeof createClient> | null = null;
 
-export function getClient() {
-  if (!clientInstance) {
-    const account = createAccount();
-    clientInstance = createClient({
-      chain: studionet,
-      account,
-    });
+// Writes must be signed by the same wallet the app connects and displays
+// (see WalletProvider / useWallet), never by a throwaway key. The write
+// client is rebuilt whenever the caller's connected address changes so a
+// wallet switch can't silently sign with a stale account.
+let writeClientInstance: ReturnType<typeof createClient> | null = null;
+let writeClientAddress: string | null = null;
+
+export function getReadClient() {
+  if (!readClientInstance) {
+    readClientInstance = createClient({ chain: studionet });
   }
-  return clientInstance;
+  return readClientInstance;
 }
 
-async function ensureInit() {
-  if (!initialized) {
-    const client = getClient();
-    await client.initializeConsensusSmartContract();
-    initialized = true;
+function getWriteClient(account: string) {
+  if (typeof window === "undefined" || !window.ethereum) {
+    throw new Error("No injected wallet found - connect a wallet before signing transactions");
   }
+  const normalized = account.toLowerCase();
+  if (!writeClientInstance || writeClientAddress !== normalized) {
+    writeClientInstance = createClient({
+      chain: studionet,
+      account: account as `0x${string}`,
+      provider: window.ethereum,
+    });
+    writeClientAddress = normalized;
+  }
+  return writeClientInstance;
+}
+
+async function assertActiveWalletAccount(account: string): Promise<void> {
+  if (typeof window === "undefined" || !window.ethereum) {
+    throw new Error("No injected wallet found - connect a wallet before signing transactions");
+  }
+
+  const accounts: string[] = await window.ethereum.request({ method: "eth_accounts" });
+  const activeAccount = accounts[0];
+  if (!activeAccount) {
+    throw new Error("Wallet not connected - connect a wallet before signing transactions");
+  }
+  if (activeAccount.toLowerCase() !== account.toLowerCase()) {
+    resetWriteClient();
+    throw new Error("Wallet account changed - review the connected address and submit again");
+  }
+}
+
+export function resetWriteClient() {
+  writeClientInstance = null;
+  writeClientAddress = null;
 }
 
 export function resetClient() {
-  clientInstance = null;
-  initialized = false;
+  readClientInstance = null;
+  resetWriteClient();
 }
 
 async function read(functionName: string, args: any[] = []): Promise<any> {
-  await ensureInit();
-  const client = getClient();
+  const client = getReadClient();
   const timeout = new Promise((_, reject) =>
     setTimeout(() => reject(new Error("RPC timeout")), 15000)
   );
@@ -48,12 +80,16 @@ async function read(functionName: string, args: any[] = []): Promise<any> {
 }
 
 async function write(
+  account: string,
   functionName: string,
   args: any[] = [],
   value: bigint = BigInt(0)
 ): Promise<string> {
-  await ensureInit();
-  const client = getClient();
+  if (!account) {
+    throw new Error("Wallet not connected - connect a wallet before signing transactions");
+  }
+  await assertActiveWalletAccount(account);
+  const client = getWriteClient(account);
   const hash = await client.writeContract({
     address: CONTRACT_ADDRESS as `0x${string}`,
     functionName,
@@ -62,41 +98,59 @@ async function write(
   });
   await client.waitForTransactionReceipt({
     hash,
-    status: TransactionStatus.ACCEPTED,
+    status: TransactionStatus.FINALIZED,
     retries: 60,
     interval: 3000,
   });
+  // StudioNet currently leaves the SDK's normalized txExecutionResultName as
+  // NOT_VOTED even after finality. The finalized raw leader receipt is the
+  // authoritative execution result populated by this network.
+  const finalized = (await client.getTransaction({ hash })) as any;
+  const result = finalized?.consensus_data?.leader_receipt?.[0]?.execution_result;
+  if (result !== "SUCCESS") {
+    throw new Error(`GenLayer contract execution failed (${result}). Transaction: ${hash}`);
+  }
   return hash;
 }
 
 // Pool methods
 export async function createPool(
+  account: string,
   slug: string,
   name: string,
   component: string,
   statusUrl: string
 ): Promise<string> {
-  return write("create_pool", [slug, name, component, statusUrl]);
+  return write(account, "create_pool", [slug, name, component, statusUrl]);
 }
 
-export async function underwritePool(poolId: number, valueWei: bigint): Promise<string> {
-  return write("underwrite_pool", [poolId], valueWei);
+export async function underwritePool(
+  account: string,
+  poolId: number,
+  valueWei: bigint
+): Promise<string> {
+  return write(account, "underwrite_pool", [poolId], valueWei);
 }
 
-export async function withdrawAvailable(poolId: number, amountWei: bigint): Promise<string> {
-  return write("withdraw_available", [poolId, amountWei]);
+export async function withdrawAvailable(
+  account: string,
+  poolId: number,
+  amountWei: bigint
+): Promise<string> {
+  return write(account, "withdraw_available", [poolId, amountWei]);
 }
 
-export async function pausePool(poolId: number): Promise<string> {
-  return write("pause_pool", [poolId]);
+export async function pausePool(account: string, poolId: number): Promise<string> {
+  return write(account, "pause_pool", [poolId]);
 }
 
-export async function unpausePool(poolId: number): Promise<string> {
-  return write("unpause_pool", [poolId]);
+export async function unpausePool(account: string, poolId: number): Promise<string> {
+  return write(account, "unpause_pool", [poolId]);
 }
 
 // Policy methods
 export async function buyPolicy(
+  account: string,
   poolId: number,
   coverageWei: bigint,
   durationDays: number,
@@ -105,6 +159,7 @@ export async function buyPolicy(
   premiumWei: bigint
 ): Promise<string> {
   return write(
+    account,
     "buy_policy",
     [poolId, coverageWei, durationDays, minMinutes, qualifyingTier],
     premiumWei
@@ -113,6 +168,7 @@ export async function buyPolicy(
 
 // Claim methods
 export async function fileClaim(
+  account: string,
   policyId: number,
   incidentUrl: string,
   claimedStart: number,
@@ -120,7 +176,7 @@ export async function fileClaim(
   affectedComponent: string,
   claimNote: string
 ): Promise<string> {
-  return write("file_claim", [
+  return write(account, "file_claim", [
     policyId,
     incidentUrl,
     claimedStart,
@@ -130,12 +186,12 @@ export async function fileClaim(
   ]);
 }
 
-export async function reviewClaim(claimId: number): Promise<string> {
-  return write("review_claim", [claimId]);
+export async function reviewClaim(account: string, claimId: number): Promise<string> {
+  return write(account, "review_claim", [claimId]);
 }
 
-export async function settleClaim(claimId: number): Promise<string> {
-  return write("settle_claim", [claimId]);
+export async function settleClaim(account: string, claimId: number): Promise<string> {
+  return write(account, "settle_claim", [claimId]);
 }
 
 // Read methods
@@ -153,6 +209,10 @@ export async function getClaim(claimId: number): Promise<Claim> {
 
 export async function getProtocolStats(): Promise<ProtocolStats> {
   return read("get_protocol_stats") as Promise<ProtocolStats>;
+}
+
+export async function getOwner(): Promise<string> {
+  return read("get_owner") as Promise<string>;
 }
 
 export async function getPoolIds(): Promise<number[]> {

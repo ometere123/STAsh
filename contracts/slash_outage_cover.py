@@ -1,4 +1,4 @@
-# v0.2.18
+# v0.2.19
 # { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 
 from genlayer import *
@@ -180,17 +180,17 @@ class SlashOutageCover(gl.Contract):
         status_url: str,
     ) -> int:
         if gl.message.sender_address != self.owner:
-            raise gl.UserError("ONLY_OWNER")
+            raise gl.vm.UserError("ONLY_OWNER")
         if service_slug not in VALID_SLUGS:
-            raise gl.UserError("INVALID_SERVICE")
+            raise gl.vm.UserError("INVALID_SERVICE")
         if len(service_slug) > MAX_SERVICE_SLUG_CHARS:
-            raise gl.UserError("INVALID_SERVICE")
+            raise gl.vm.UserError("INVALID_SERVICE")
         if len(service_name) > MAX_SERVICE_NAME_CHARS:
-            raise gl.UserError("INVALID_SERVICE")
+            raise gl.vm.UserError("INVALID_SERVICE")
         if len(covered_component) == 0 or len(covered_component) > MAX_COMPONENT_CHARS:
-            raise gl.UserError("INVALID_COMPONENT")
+            raise gl.vm.UserError("INVALID_COMPONENT")
         if len(status_url) == 0 or len(status_url) > MAX_URL_CHARS:
-            raise gl.UserError("INVALID_INCIDENT_URL")
+            raise gl.vm.UserError("INVALID_INCIDENT_URL")
 
         self.pool_count = self.pool_count + u256(1)
         pool_id = self.pool_count
@@ -218,18 +218,18 @@ class SlashOutageCover(gl.Contract):
     def pause_pool(self, pool_id: int) -> None:
         pool_id = u256(pool_id)
         if gl.message.sender_address != self.owner:
-            raise gl.UserError("ONLY_OWNER")
+            raise gl.vm.UserError("ONLY_OWNER")
         if pool_id not in self.pools:
-            raise gl.UserError("POOL_NOT_FOUND")
+            raise gl.vm.UserError("POOL_NOT_FOUND")
         self.pools[pool_id].status = POOL_PAUSED
 
     @gl.public.write
     def unpause_pool(self, pool_id: int) -> None:
         pool_id = u256(pool_id)
         if gl.message.sender_address != self.owner:
-            raise gl.UserError("ONLY_OWNER")
+            raise gl.vm.UserError("ONLY_OWNER")
         if pool_id not in self.pools:
-            raise gl.UserError("POOL_NOT_FOUND")
+            raise gl.vm.UserError("POOL_NOT_FOUND")
         self.pools[pool_id].status = POOL_ACTIVE
 
     # =========================================================================
@@ -240,14 +240,14 @@ class SlashOutageCover(gl.Contract):
     def underwrite_pool(self, pool_id: int) -> None:
         pool_id = u256(pool_id)
         if pool_id not in self.pools:
-            raise gl.UserError("POOL_NOT_FOUND")
+            raise gl.vm.UserError("POOL_NOT_FOUND")
         pool = self.pools[pool_id]
         if pool.status == POOL_PAUSED:
-            raise gl.UserError("POOL_PAUSED")
+            raise gl.vm.UserError("POOL_PAUSED")
 
         value = gl.message.value
         if value == u256(0):
-            raise gl.UserError("INVALID_PREMIUM")
+            raise gl.vm.UserError("INVALID_PREMIUM")
 
         pool.total_backing_wei = pool.total_backing_wei + value
         pool.available_wei = pool.available_wei + value
@@ -269,20 +269,20 @@ class SlashOutageCover(gl.Contract):
         pool_id = u256(pool_id)
         amount_wei = u256(amount_wei)
         if pool_id not in self.pools:
-            raise gl.UserError("POOL_NOT_FOUND")
+            raise gl.vm.UserError("POOL_NOT_FOUND")
 
         pos_key = str(pool_id) + ":" + str(gl.message.sender_address)
         if pos_key not in self.underwriter_positions:
-            raise gl.UserError("NOTHING_TO_WITHDRAW")
+            raise gl.vm.UserError("NOTHING_TO_WITHDRAW")
 
         pos = self.underwriter_positions[pos_key]
         available_for_user = pos.deposited_wei - pos.withdrawn_wei
         if amount_wei == u256(0) or amount_wei > available_for_user:
-            raise gl.UserError("NOTHING_TO_WITHDRAW")
+            raise gl.vm.UserError("NOTHING_TO_WITHDRAW")
 
         pool = self.pools[pool_id]
         if amount_wei > pool.available_wei:
-            raise gl.UserError("LOCKED_COVERAGE_INVARIANT")
+            raise gl.vm.UserError("LOCKED_COVERAGE_INVARIANT")
 
         pool.available_wei = pool.available_wei - amount_wei
         pool.total_backing_wei = pool.total_backing_wei - amount_wei
@@ -318,22 +318,22 @@ class SlashOutageCover(gl.Contract):
         duration_days = u256(duration_days)
         min_minutes = u256(min_minutes)
         if pool_id not in self.pools:
-            raise gl.UserError("POOL_NOT_FOUND")
+            raise gl.vm.UserError("POOL_NOT_FOUND")
         pool = self.pools[pool_id]
         if pool.status != POOL_ACTIVE:
-            raise gl.UserError("ONLY_ACTIVE_POOL")
+            raise gl.vm.UserError("ONLY_ACTIVE_POOL")
         if qualifying_tier not in VALID_QUALIFYING_TIERS:
-            raise gl.UserError("INVALID_STATUS")
+            raise gl.vm.UserError("INVALID_STATUS")
         if coverage_wei == u256(0):
-            raise gl.UserError("INVALID_COVERAGE_AMOUNT")
+            raise gl.vm.UserError("INVALID_COVERAGE_AMOUNT")
         if duration_days < u256(MIN_POLICY_DAYS) or duration_days > u256(MAX_POLICY_DAYS):
-            raise gl.UserError("INVALID_DURATION")
+            raise gl.vm.UserError("INVALID_DURATION")
         if coverage_wei > pool.available_wei:
-            raise gl.UserError("INSUFFICIENT_POOL_LIQUIDITY")
+            raise gl.vm.UserError("INSUFFICIENT_POOL_LIQUIDITY")
 
         required_premium = self._calculate_premium(coverage_wei, duration_days)
         if gl.message.value < required_premium:
-            raise gl.UserError("INVALID_PREMIUM")
+            raise gl.vm.UserError("INVALID_PREMIUM")
 
         now = u256(int(datetime.now(timezone.utc).timestamp()))
         duration_seconds = duration_days * u256(86400)
@@ -388,35 +388,37 @@ class SlashOutageCover(gl.Contract):
         claimed_start = u256(claimed_start)
         claimed_end = u256(claimed_end)
         if policy_id not in self.policies:
-            raise gl.UserError("POLICY_NOT_FOUND")
+            raise gl.vm.UserError("POLICY_NOT_FOUND")
         policy = self.policies[policy_id]
         if gl.message.sender_address != policy.holder:
-            raise gl.UserError("ONLY_POLICY_HOLDER")
+            raise gl.vm.UserError("ONLY_POLICY_HOLDER")
         if policy.status != POLICY_ACTIVE:
-            raise gl.UserError("POLICY_NOT_ACTIVE")
+            raise gl.vm.UserError("POLICY_NOT_ACTIVE")
         if policy.claim_id != u256(0):
-            raise gl.UserError("POLICY_ALREADY_CLAIMED")
+            raise gl.vm.UserError("POLICY_ALREADY_CLAIMED")
 
         now = u256(int(datetime.now(timezone.utc).timestamp()))
 
         if now > policy.end_time:
-            raise gl.UserError("POLICY_NOT_ACTIVE")
+            raise gl.vm.UserError("POLICY_NOT_ACTIVE")
         if claimed_start < policy.waiting_period_end:
-            raise gl.UserError("INCIDENT_BEFORE_WAITING_PERIOD")
+            raise gl.vm.UserError("INCIDENT_BEFORE_WAITING_PERIOD")
+        if claimed_start > now:
+            raise gl.vm.UserError("INCIDENT_IN_FUTURE")
         if claimed_start > policy.end_time:
-            raise gl.UserError("INCIDENT_AFTER_POLICY_END")
+            raise gl.vm.UserError("INCIDENT_AFTER_POLICY_END")
         if claimed_end <= claimed_start:
-            raise gl.UserError("INVALID_INCIDENT_WINDOW")
+            raise gl.vm.UserError("INVALID_INCIDENT_WINDOW")
         if len(incident_url) == 0 or len(incident_url) > MAX_URL_CHARS:
-            raise gl.UserError("INVALID_INCIDENT_URL")
+            raise gl.vm.UserError("INVALID_INCIDENT_URL")
         if len(claim_note) > MAX_NOTE_CHARS:
-            raise gl.UserError("INVALID_INCIDENT_URL")
+            raise gl.vm.UserError("INVALID_INCIDENT_URL")
         if len(affected_component) == 0 or len(affected_component) > MAX_COMPONENT_CHARS:
-            raise gl.UserError("INVALID_COMPONENT")
+            raise gl.vm.UserError("INVALID_COMPONENT")
 
         pool_for_claim = self.pools[policy.pool_id]
         if _domain_of(incident_url) != _domain_of(pool_for_claim.status_url):
-            raise gl.UserError("INCIDENT_URL_NOT_ON_STATUS_DOMAIN")
+            raise gl.vm.UserError("INCIDENT_URL_NOT_ON_STATUS_DOMAIN")
 
         self.claim_count = self.claim_count + u256(1)
         claim_id = self.claim_count
@@ -457,10 +459,10 @@ class SlashOutageCover(gl.Contract):
     def review_claim(self, claim_id: int) -> None:
         claim_id = u256(claim_id)
         if claim_id not in self.claims:
-            raise gl.UserError("CLAIM_NOT_FOUND")
+            raise gl.vm.UserError("CLAIM_NOT_FOUND")
         claim = gl.storage.copy_to_memory(self.claims[claim_id])
         if claim.status != CLAIM_FILED:
-            raise gl.UserError("CLAIM_ALREADY_REVIEWED")
+            raise gl.vm.UserError("CLAIM_ALREADY_REVIEWED")
 
         policy = gl.storage.copy_to_memory(self.policies[claim.policy_id])
         pool = gl.storage.copy_to_memory(self.pools[claim.pool_id])
@@ -581,12 +583,12 @@ class SlashOutageCover(gl.Contract):
     def settle_claim(self, claim_id: int) -> None:
         claim_id = u256(claim_id)
         if claim_id not in self.claims:
-            raise gl.UserError("CLAIM_NOT_FOUND")
+            raise gl.vm.UserError("CLAIM_NOT_FOUND")
         claim = self.claims[claim_id]
         if claim.status != CLAIM_APPROVED and claim.status != CLAIM_DENIED:
-            raise gl.UserError("CLAIM_NOT_APPROVED")
+            raise gl.vm.UserError("CLAIM_NOT_APPROVED")
         if claim.settled_at != u256(0):
-            raise gl.UserError("CLAIM_ALREADY_SETTLED")
+            raise gl.vm.UserError("CLAIM_ALREADY_SETTLED")
 
         policy = self.policies[claim.policy_id]
         pool = self.pools[claim.pool_id]
@@ -650,10 +652,14 @@ class SlashOutageCover(gl.Contract):
     # =========================================================================
 
     @gl.public.view
+    def get_owner(self) -> str:
+        return str(self.owner)
+
+    @gl.public.view
     def get_pool(self, pool_id: int) -> dict:
         pool_id = u256(pool_id)
         if pool_id not in self.pools:
-            raise gl.UserError("POOL_NOT_FOUND")
+            raise gl.vm.UserError("POOL_NOT_FOUND")
         p = self.pools[pool_id]
         return {
             "id": int(pool_id),
@@ -677,7 +683,7 @@ class SlashOutageCover(gl.Contract):
     def get_policy(self, policy_id: int) -> dict:
         policy_id = u256(policy_id)
         if policy_id not in self.policies:
-            raise gl.UserError("POLICY_NOT_FOUND")
+            raise gl.vm.UserError("POLICY_NOT_FOUND")
         p = self.policies[policy_id]
         return {
             "id": int(policy_id),
@@ -699,7 +705,7 @@ class SlashOutageCover(gl.Contract):
     def get_claim(self, claim_id: int) -> dict:
         claim_id = u256(claim_id)
         if claim_id not in self.claims:
-            raise gl.UserError("CLAIM_NOT_FOUND")
+            raise gl.vm.UserError("CLAIM_NOT_FOUND")
         c = self.claims[claim_id]
         return {
             "id": int(claim_id),
@@ -762,7 +768,8 @@ class SlashOutageCover(gl.Contract):
     @gl.public.view
     def get_underwriter_position(self, pool_id: int, underwriter: str) -> dict:
         pool_id = u256(pool_id)
-        pos_key = str(pool_id) + ":" + underwriter
+        # Canonicalize checksum/casing exactly as write paths do for sender_address.
+        pos_key = str(pool_id) + ":" + str(Address(underwriter))
         if pos_key not in self.underwriter_positions:
             return {
                 "deposited_wei": "0",

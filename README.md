@@ -39,8 +39,8 @@ Frontend (Next.js)  →  GenLayer Contract (source of truth)
 ## Contract
 
 - **Network:** GenLayer StudioNet (Chain ID: 61999)
-- **Contract Address:** `0x6D5108C7643Dd4eFc5b769c59B5Ae3A6aE64c1DF`
-- **Explorer:** https://explorer-studio.genlayer.com/address/0x6D5108C7643Dd4eFc5b769c59B5Ae3A6aE64c1DF
+- **Contract Address:** `0x72A76300b890D5D0b69E59d417a5Ff66cc0021cc`
+- **Explorer:** https://explorer-studio.genlayer.com/address/0x72A76300b890D5D0b69E59d417a5Ff66cc0021cc
 
 ## Local Development
 
@@ -100,6 +100,53 @@ python scripts/smoke_test.py
 
 Prints step-by-step instructions for the full flow: create pools → underwrite → buy policy → file claim → review → settle.
 
+## Account Flow (Wallet Identity)
+
+The app uses one verifiable wallet identity end to end. The address shown in the UI selects holder, claimant, underwriter, and owner reads; the same address is checked again against the wallet immediately before every write and is passed to the injected-wallet signer.
+
+1. **Connect and display** — `WalletProvider` requests `eth_requestAccounts`, stores account zero, and `TopBar` displays it. `accountsChanged` updates that state and invalidates the cached write client.
+2. **Identity-scoped reads** — pages pass that address to `getPolicyIdsForHolder`, `getClaimIdsForHolder`, and `getUnderwriterPosition`. Underwriter addresses are canonicalized on-chain before position lookup, so checksum casing cannot select a different key.
+3. **Owner read** — the Admin page calls the contract's `get_owner()`. It enables controls only when the connected address equals the owner returned by the deployed contract. An environment variable is not an authorization source.
+4. **Pre-sign assertion** — immediately before a write, `contract.ts` calls `eth_accounts` again. If the wallet's active account differs from the displayed/captured account, the write is stopped and the user must review and resubmit.
+5. **Injected-wallet signing** — every write helper receives the connected account and builds the client as:
+
+   ```ts
+   createClient({ chain: studionet, account, provider: window.ethereum })
+   ```
+
+   No generated or hardcoded private key exists in the browser write path. The wallet shows the signature request to the user.
+6. **On-chain authorization** — ownership and role state are derived from `gl.message.sender_address`: owner-only pool administration, underwriter positions, policy ownership, and claim filing authorization.
+7. **Execution verification** — consensus acceptance alone is not treated as success. The app requires the SDK receipt's `txExecutionResultName` to equal `FINISHED_WITH_RETURN`; a reverted execution is surfaced as an error and never shown as confirmed.
+
+### Authorization Matrix
+
+| Action | UI/read identity | On-chain identity/guard | Expected negative proof |
+|---|---|---|---|
+| Create, pause, or unpause pool | `get_owner()` equals connected address | sender must equal `self.owner` | non-owner receives `ONLY_OWNER` |
+| Underwrite or withdraw | position read for connected address | position keyed by sender | another wallet has a separate/zero position |
+| Buy cover | policies read for connected address | `policy.holder = sender` | another wallet does not own the policy |
+| File claim | holder policies for connected address | sender must equal `policy.holder` | non-holder receives `ONLY_POLICY_HOLDER` |
+| Review or settle | claim read is public | contract lifecycle guards | invalid lifecycle transition reverts |
+
+### Reproducible Multi-Wallet Verification
+
+The browser flow uses only the injected wallet. The following separate CLI suite is test infrastructure for demonstrating authorization boundaries with isolated funded StudioNet burner accounts; its private-key file is gitignored and never used by the app.
+
+```powershell
+cd frontend
+npm run wallets:generate
+# Fund the printed StudioNet addresses, then:
+npm run test:wallet-flow
+```
+
+The suite prints the contract and role addresses, verifies that each successful write is reflected by reads for the same address, inspects execution results rather than send success, and proves non-owner/non-holder calls revert. For reviewer evidence, retain the sanitized console output and replace abbreviated hashes with explorer links in the submission notes.
+
+> **Verified deployment target:** all app, script, and test references point to `0x72A76300b890D5D0b69E59d417a5Ff66cc0021cc`. Run the verification suite against this exact address before resubmitting.
+
+### Manual Explorer Check
+
+Connect a wallet, copy the full address shown in the TopBar, submit a write, and open its transaction card. The explorer sender must equal the displayed address, the receipt must show successful execution, and the resulting holder/claimant/underwriter/owner read must resolve to that same address.
+
 ## Security Notes
 
 - Cloudflare Worker is **not trusted** for payout decisions
@@ -108,6 +155,7 @@ Prints step-by-step instructions for the full flow: create pools → underwrite 
 - Locked coverage cannot be withdrawn by underwriters
 - Claims cannot be settled twice
 - 24-hour waiting period after policy purchase before claims are eligible
+- Future-dated incident timestamps are rejected on-chain
 
 ## Limitations
 
