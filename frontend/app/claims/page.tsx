@@ -34,7 +34,7 @@ export default function ClaimsPage() {
     try {
       const startTs = Math.floor(new Date(claimedStart).getTime() / 1000);
       const endTs = Math.floor(new Date(claimedEnd).getTime() / 1000);
-      const hash = await fileClaim(parseInt(policyId), incidentUrl, startTs, endTs, affectedComponent, claimNote);
+      const hash = await fileClaim(address, parseInt(policyId), incidentUrl, startTs, endTs, affectedComponent, claimNote);
       addTx(hash, "File Claim");
       updateTx(hash, "confirmed");
       setLastTxHash(hash);
@@ -50,7 +50,8 @@ export default function ClaimsPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const hash = await reviewClaim(claimId);
+      if (!address) return;
+      const hash = await reviewClaim(address, claimId);
       addTx(hash, `Review Claim #${claimId}`);
       updateTx(hash, "confirmed");
       setLastTxHash(hash);
@@ -66,7 +67,8 @@ export default function ClaimsPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const hash = await settleClaim(claimId);
+      if (!address) return;
+      const hash = await settleClaim(address, claimId);
       addTx(hash, `Settle Claim #${claimId}`);
       updateTx(hash, "confirmed");
       setLastTxHash(hash);

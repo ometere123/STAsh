@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { connectWallet, getChainId, switchToStudioNet } from "@/lib/chain";
 import { CHAIN_ID } from "@/lib/constants";
+import { resetWriteClient } from "@/lib/contract";
 
 const WALLET_CONNECTED_KEY = "slash.wallet.connected";
 
@@ -51,6 +52,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const disconnect = useCallback(() => {
+    resetWriteClient();
     setAddress(null);
     setChainId(null);
     window.localStorage.removeItem(WALLET_CONNECTED_KEY);
@@ -66,6 +68,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined" || !window.ethereum) return;
 
     const handleAccountsChanged = (accounts: string[]) => {
+      resetWriteClient();
       const nextAddress = accounts[0] || null;
       setAddress(nextAddress);
       if (nextAddress) {

@@ -53,7 +53,7 @@ function UnderwriteContent() {
     setSubmitting(true);
     setError(null);
     try {
-      const hash = await underwritePool(parseInt(poolId), genToWei(parseFloat(depositGen)));
+      const hash = await underwritePool(address, parseInt(poolId), genToWei(parseFloat(depositGen)));
       addTx(hash, "Underwrite Pool");
       updateTx(hash, "confirmed");
       setLastTxHash(hash);
@@ -71,7 +71,7 @@ function UnderwriteContent() {
     setSubmitting(true);
     setError(null);
     try {
-      const hash = await withdrawAvailable(parseInt(poolId), genToWei(parseFloat(withdrawGen)));
+      const hash = await withdrawAvailable(address, parseInt(poolId), genToWei(parseFloat(withdrawGen)));
       addTx(hash, "Withdraw");
       updateTx(hash, "confirmed");
       setLastTxHash(hash);

@@ -8,8 +8,11 @@ dist/
 .wrangler/
 .vercel/
 *.log
+*.tsbuildinfo
 .DS_Store
 Thumbs.db
 __pycache__/
 *.pyc
 .pytest_cache/
+test-wallets.local.json
+live-certification-report.json

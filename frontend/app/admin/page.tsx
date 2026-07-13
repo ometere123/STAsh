@@ -4,17 +4,19 @@ import { useEffect, useMemo, useState } from "react";
 import { useWallet } from "@/providers/WalletProvider";
 import { useTransactions } from "@/providers/TransactionProvider";
 import { useAllPools } from "@/hooks/usePool";
-import { createPool, pausePool, unpausePool } from "@/lib/contract";
-import { ADMIN_ADDRESSES, MVP_SERVICES } from "@/lib/constants";
-import { isAdminAddress } from "@/lib/admin";
+import { createPool, getOwner, pausePool, unpausePool } from "@/lib/contract";
+import { MVP_SERVICES } from "@/lib/constants";
 import { TxHashCard } from "@/components/shared/TxHashCard";
 
 export default function AdminPage() {
   const { address, isCorrectChain } = useWallet();
   const { pools, refresh } = useAllPools();
   const { addTx, updateTx } = useTransactions();
-  const isAdmin = isAdminAddress(address);
-  const adminConfigured = ADMIN_ADDRESSES.length > 0;
+  const [contractOwner, setContractOwner] = useState<string | null>(null);
+  const [ownerReadError, setOwnerReadError] = useState<string | null>(null);
+  const isAdmin = Boolean(
+    address && contractOwner && address.toLowerCase() === contractOwner.toLowerCase()
+  );
 
   const [serviceSlug, setServiceSlug] = useState<string>(MVP_SERVICES[0].slug);
   const selectedService = useMemo(
@@ -46,12 +48,30 @@ export default function AdminPage() {
     setStatusUrl(selectedService.statusUrl);
   }, [selectedService]);
 
+  useEffect(() => {
+    let cancelled = false;
+    getOwner()
+      .then((owner) => {
+        if (!cancelled) {
+          setContractOwner(owner);
+          setOwnerReadError(null);
+        }
+      })
+      .catch((e: Error) => {
+        if (!cancelled) setOwnerReadError(e.message || "Unable to read contract owner");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function handleCreatePool() {
-    if (!canCreate) return;
+    if (!canCreate || !address) return;
     setSubmitting(true);
     setError(null);
     try {
       const hash = await createPool(
+        address,
         serviceSlug,
         serviceName.trim(),
         coveredComponent.trim(),
@@ -69,14 +89,14 @@ export default function AdminPage() {
   }
 
   async function handlePoolStatus(nextStatus: "pause" | "unpause") {
-    if (!isAdmin || !isCorrectChain || !selectedPoolId) return;
+    if (!isAdmin || !isCorrectChain || !selectedPoolId || !address) return;
     setSubmitting(true);
     setError(null);
     try {
       const hash =
         nextStatus === "pause"
-          ? await pausePool(parseInt(selectedPoolId))
-          : await unpausePool(parseInt(selectedPoolId));
+          ? await pausePool(address, parseInt(selectedPoolId))
+          : await unpausePool(address, parseInt(selectedPoolId));
       addTx(hash, nextStatus === "pause" ? "Pause Pool" : "Unpause Pool");
       updateTx(hash, "confirmed");
       setLastTxHash(hash);
@@ -88,19 +108,28 @@ export default function AdminPage() {
     }
   }
 
-  if (!adminConfigured) {
+  if (ownerReadError) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
           <h2 className="font-heading text-2xl font-bold">Admin</h2>
-          <p className="text-sm text-muted-steel mt-1">Pool management is not configured</p>
+          <p className="text-sm text-muted-steel mt-1">Unable to verify contract ownership</p>
         </div>
         <div className="panel p-6 space-y-3">
-          <div className="font-heading text-lg">Admin address missing</div>
+          <div className="font-heading text-lg">Owner read failed</div>
           <p className="text-sm text-muted-steel">
-            Set NEXT_PUBLIC_ADMIN_ADDRESSES to the contract owner wallet address, then redeploy.
+            Admin writes are disabled because the deployed contract owner could not be verified on-chain.
           </p>
+          <div className="text-xs font-mono text-failure-red break-all">{ownerReadError}</div>
         </div>
+      </div>
+    );
+  }
+
+  if (!contractOwner) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="panel p-6 text-sm text-muted-steel">Verifying contract owner on-chain...</div>
       </div>
     );
   }
@@ -122,6 +151,9 @@ export default function AdminPage() {
               Connected wallet: {address}
             </div>
           )}
+          <div className="text-xs font-mono text-muted-steel break-all">
+            On-chain owner: {contractOwner}
+          </div>
         </div>
       </div>
     );
@@ -132,6 +164,9 @@ export default function AdminPage() {
       <div>
         <h2 className="font-heading text-2xl font-bold">Admin</h2>
         <p className="text-sm text-muted-steel mt-1">Create and manage service pools</p>
+        <p className="text-xs font-mono text-muted-steel mt-2 break-all">
+          Verified owner: {contractOwner}
+        </p>
       </div>
 
       <div className="panel p-6 space-y-5">
