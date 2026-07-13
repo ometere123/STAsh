@@ -31,12 +31,13 @@ function CoverageContent() {
   const [minMinutes, setMinMinutes] = useState("60");
   const [qualifyingTier, setQualifyingTier] = useState("qualifying_outage");
   const [premiumQuote, setPremiumQuote] = useState<string | null>(null);
+  const [termsAcknowledged, setTermsAcknowledged] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
   const [purchasedPolicyId, setPurchasedPolicyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = address && isCorrectChain && poolId && !submitting;
+  const canSubmit = address && isCorrectChain && poolId && termsAcknowledged && !submitting;
 
   async function fetchQuote() {
     try {
@@ -166,6 +167,27 @@ function CoverageContent() {
           )}
         </div>
 
+        <div className="panel-dark p-4 space-y-3 border-incident-amber/30">
+          <div className="font-heading text-sm text-incident-amber">24-hour claim waiting period</div>
+          <p className="text-xs text-muted-steel leading-relaxed">
+            Incidents starting during the first 24 hours after this purchase finalizes are not eligible.
+            The selected minimum incident duration ({minMinutes || "0"} minutes) is a separate requirement.
+          </p>
+          <p className="text-xs text-muted-steel leading-relaxed">
+            Claim evidence must use a public incident-detail URL from the service&apos;s official status domain.
+            GenLayer validators fetch and assess the page&apos;s actual content during review.
+          </p>
+          <label className="flex items-start gap-2 text-xs text-panel-white cursor-pointer">
+            <input
+              type="checkbox"
+              checked={termsAcknowledged}
+              onChange={(e) => setTermsAcknowledged(e.target.checked)}
+              className="mt-0.5 accent-signal-green"
+            />
+            <span>I understand the 24-hour waiting period and public-evidence requirement.</span>
+          </label>
+        </div>
+
         {error && (
           <div className="text-failure-red text-sm">{error}</div>
         )}
@@ -177,6 +199,10 @@ function CoverageContent() {
         >
           {submitting ? "Submitting..." : "Buy Cover"}
         </button>
+
+        {address && !termsAcknowledged && (
+          <div className="text-xs text-incident-amber text-center">Acknowledge the waiting period to continue</div>
+        )}
 
         {!address && (
           <div className="text-xs text-muted-steel text-center">Connect wallet to buy cover</div>

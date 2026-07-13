@@ -106,3 +106,14 @@ The live certification records each action, signer, expected outcome, final exec
 ## Conclusion
 
 GenLayer writes, UI display identity, holder reads, claimant reads, underwriter reads, and owner reads now share one explicit wallet identity flow. The browser revalidates the active account immediately before signing, the contract authorizes the resulting sender on-chain, and finalized explorer evidence demonstrates that the same address is preserved end to end.
+
+## User-facing coverage disclosure
+
+Before Buy Cover is enabled, the Coverage Builder explicitly discloses and requires acknowledgment of:
+
+- the 24-hour claim waiting period;
+- the distinction between that waiting period and the selected minimum incident duration;
+- the requirement for a public incident-detail URL from the service's official status domain; and
+- the fact that GenLayer validators fetch and assess the page's actual content during claim review.
+
+The claim form repeats the evidence-fetch disclosure beside the Incident URL field, and My Policies shows the exact waiting-period end timestamp for each purchased policy.

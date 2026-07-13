@@ -111,6 +111,10 @@ export default function ClaimsPage() {
         <div>
           <label className="label-text">Incident URL</label>
           <input type="url" value={incidentUrl} onChange={(e) => setIncidentUrl(e.target.value)} placeholder="https://www.githubstatus.com/incidents/..." className="input-field mt-1" />
+          <p className="text-xs text-muted-steel mt-2 leading-relaxed">
+            Use a permanent public incident-detail URL from the service&apos;s official status domain.
+            GenLayer validators fetch and evaluate the page&apos;s actual content during review—not only the URL format.
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
