@@ -9,6 +9,7 @@ import { isAdminAddress } from "@/lib/admin";
 const NAV_ITEMS = [
   { href: "/radar", label: "Radar", icon: "R" },
   { href: "/coverage", label: "Coverage", icon: "C" },
+  { href: "/policies", label: "My Policies", icon: "P" },
   { href: "/underwrite", label: "Underwrite", icon: "U" },
   { href: "/claims", label: "Claims", icon: "Q" },
   { href: "/ledger", label: "Ledger", icon: "L" },

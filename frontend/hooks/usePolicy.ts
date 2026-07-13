@@ -33,16 +33,23 @@ export function usePolicy(policyId: number | null) {
 export function useHolderPolicies(holder: string | null) {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!holder) return;
+    if (!holder) {
+      setPolicies([]);
+      setError(null);
+      return;
+    }
     setLoading(true);
+    setError(null);
     try {
       const ids = await getPolicyIdsForHolder(holder);
       const results = await Promise.all(ids.map((id) => getPolicy(id)));
       setPolicies(results);
-    } catch {
+    } catch (e: any) {
       setPolicies([]);
+      setError(e.message || "Unable to load policies");
     } finally {
       setLoading(false);
     }
@@ -52,5 +59,11 @@ export function useHolderPolicies(holder: string | null) {
     refresh();
   }, [refresh]);
 
-  return { policies, loading, refresh };
+  useEffect(() => {
+    const handleFocus = () => refresh();
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [refresh]);
+
+  return { policies, loading, error, refresh };
 }

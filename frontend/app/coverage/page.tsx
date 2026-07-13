@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useAllPools } from "@/hooks/usePool";
 import { useWallet } from "@/providers/WalletProvider";
 import { useTransactions } from "@/providers/TransactionProvider";
-import { buyPolicy, getPremiumQuote } from "@/lib/contract";
+import { buyPolicy, getPolicyIdsForHolder, getPremiumQuote } from "@/lib/contract";
 import { genToWei, weiToGen } from "@/lib/format";
 import { QUALIFYING_TIERS, WEI_PER_GEN } from "@/lib/constants";
 import { TxHashCard } from "@/components/shared/TxHashCard";
@@ -33,6 +33,7 @@ function CoverageContent() {
   const [premiumQuote, setPremiumQuote] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
+  const [purchasedPolicyId, setPurchasedPolicyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const canSubmit = address && isCorrectChain && poolId && !submitting;
@@ -72,6 +73,8 @@ function CoverageContent() {
       addTx(hash, "Buy Policy");
       updateTx(hash, "confirmed");
       setLastTxHash(hash);
+      const policyIds = await getPolicyIdsForHolder(address);
+      setPurchasedPolicyId(policyIds.length ? policyIds[policyIds.length - 1] : null);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -181,6 +184,17 @@ function CoverageContent() {
       </div>
 
       {lastTxHash && <TxHashCard hash={lastTxHash} action="Buy Policy" />}
+      {purchasedPolicyId && (
+        <div className="panel p-4 border-signal-green/40 bg-signal-green/5 space-y-2">
+          <div className="font-heading text-sm text-signal-green">Coverage purchased successfully</div>
+          <p className="text-xs text-muted-steel break-all">
+            Policy #{purchasedPolicyId} is owned by {address}.
+          </p>
+          <a href="/policies" className="btn-secondary inline-block text-xs py-1.5">
+            View My Policies
+          </a>
+        </div>
+      )}
     </div>
   );
 }

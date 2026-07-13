@@ -67,7 +67,7 @@ export function resetClient() {
 async function read(functionName: string, args: any[] = []): Promise<any> {
   const client = getReadClient();
   const timeout = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("RPC timeout")), 15000)
+    setTimeout(() => reject(new Error("StudioNet read timed out after 30 seconds. Please retry.")), 30000)
   );
   return Promise.race([
     client.readContract({

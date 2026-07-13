@@ -12,8 +12,8 @@ import { statusColor, formatTimestamp } from "@/lib/format";
 export default function ClaimsPage() {
   const { address, isCorrectChain } = useWallet();
   const { addTx, updateTx } = useTransactions();
-  const { policies } = useHolderPolicies(address);
-  const { claims, refresh: refreshClaims } = useHolderClaims(address);
+  const { policies, loading: policiesLoading, error: policiesError, refresh: refreshPolicies } = useHolderPolicies(address);
+  const { claims, loading: claimsLoading, error: claimsError, refresh: refreshClaims } = useHolderClaims(address);
 
   const [policyId, setPolicyId] = useState("");
   const [incidentUrl, setIncidentUrl] = useState("");
@@ -38,7 +38,7 @@ export default function ClaimsPage() {
       addTx(hash, "File Claim");
       updateTx(hash, "confirmed");
       setLastTxHash(hash);
-      await refreshClaims();
+      await Promise.all([refreshClaims(), refreshPolicies()]);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -95,11 +95,17 @@ export default function ClaimsPage() {
         <div>
           <label className="label-text">Policy</label>
           <select value={policyId} onChange={(e) => setPolicyId(e.target.value)} className="input-field mt-1">
-            <option value="">Select active policy</option>
+            <option value="">{policiesLoading ? "Loading policies..." : "Select active policy"}</option>
             {activePolicies.map((p) => (
               <option key={p.id} value={p.id}>Policy #{p.id} - Pool #{p.pool_id}</option>
             ))}
           </select>
+          {policiesError && (
+            <div className="mt-2 flex items-center gap-3 text-xs text-failure-red">
+              <span>{policiesError}</span>
+              <button onClick={refreshPolicies} className="underline">Retry</button>
+            </div>
+          )}
         </div>
 
         <div>
@@ -136,6 +142,13 @@ export default function ClaimsPage() {
       </div>
 
       {lastTxHash && <TxHashCard hash={lastTxHash} action="Claim Action" />}
+
+      {claimsLoading && <div className="text-xs font-mono text-muted-steel">Loading your claims...</div>}
+      {claimsError && (
+        <div className="panel p-4 border-failure-red/40 text-xs text-failure-red">
+          {claimsError} <button onClick={refreshClaims} className="underline ml-2">Retry</button>
+        </div>
+      )}
 
       {claims.length > 0 && (
         <div className="space-y-3">

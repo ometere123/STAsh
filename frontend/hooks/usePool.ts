@@ -40,13 +40,7 @@ export function useAllPools() {
     setError(null);
     try {
       const ids = await getPoolIds();
-      const results: Pool[] = [];
-      for (const id of ids) {
-        try {
-          const p = await getPool(id);
-          results.push(p);
-        } catch {}
-      }
+      const results = await Promise.all(ids.map((id) => getPool(id)));
       setPools(results);
     } catch (e: any) {
       setError(e.message);

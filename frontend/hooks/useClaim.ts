@@ -33,16 +33,23 @@ export function useClaim(claimId: number | null) {
 export function useHolderClaims(holder: string | null) {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!holder) return;
+    if (!holder) {
+      setClaims([]);
+      setError(null);
+      return;
+    }
     setLoading(true);
+    setError(null);
     try {
       const ids = await getClaimIdsForHolder(holder);
       const results = await Promise.all(ids.map((id) => getClaim(id)));
       setClaims(results);
-    } catch {
+    } catch (e: any) {
       setClaims([]);
+      setError(e.message || "Unable to load claims");
     } finally {
       setLoading(false);
     }
@@ -52,5 +59,5 @@ export function useHolderClaims(holder: string | null) {
     refresh();
   }, [refresh]);
 
-  return { claims, loading, refresh };
+  return { claims, loading, error, refresh };
 }

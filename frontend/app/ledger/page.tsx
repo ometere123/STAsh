@@ -13,22 +13,23 @@ export default function LedgerPage() {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const s = await getProtocolStats();
       setStats(s);
-      const claimList: Claim[] = [];
-      for (let i = 1; i <= s.claim_count; i++) {
-        try {
-          const c = await getClaim(i);
-          claimList.push(c);
-        } catch {}
-      }
+      const claimList = await Promise.all(
+        Array.from({ length: s.claim_count }, (_, index) => getClaim(index + 1))
+      );
       setClaims(claimList);
-    } catch {}
-    setLoading(false);
+    } catch (e: any) {
+      setError(e.message || "Unable to load the payout ledger");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export default function LedgerPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-heading text-2xl font-bold">Payout Ledger</h2>
-          <p className="text-sm text-muted-steel mt-1">All claims across the protocol</p>
+          <p className="text-sm text-muted-steel mt-1">Claims only — purchased coverage appears under My Policies</p>
         </div>
         {stats && (
           <div className="flex gap-4">
@@ -78,7 +79,14 @@ export default function LedgerPage() {
         ))}
       </div>
 
-      {loading && <div className="text-muted-steel font-mono text-sm">Loading...</div>}
+      {loading && <div className="text-muted-steel font-mono text-sm">Loading finalized claims from StudioNet...</div>}
+
+      {error && (
+        <div className="panel p-4 border-failure-red/40 space-y-3">
+          <div className="text-sm text-failure-red">{error}</div>
+          <button onClick={loadData} className="btn-secondary text-xs py-1.5">Retry</button>
+        </div>
+      )}
 
       <div className="space-y-2">
         {filtered.map((c) => (
@@ -93,8 +101,12 @@ export default function LedgerPage() {
             </span>
           </Link>
         ))}
-        {!loading && filtered.length === 0 && (
-          <div className="panel p-8 text-center text-muted-steel text-sm">No claims found</div>
+        {!loading && !error && filtered.length === 0 && (
+          <div className="panel p-8 text-center space-y-3">
+            <div className="text-muted-steel text-sm">No claims found</div>
+            <p className="text-xs text-muted-steel">A coverage purchase creates a policy, not a claim.</p>
+            <Link href="/policies" className="btn-secondary inline-block text-xs py-1.5">View My Policies</Link>
+          </div>
         )}
       </div>
     </div>
