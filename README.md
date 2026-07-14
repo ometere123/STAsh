@@ -157,6 +157,24 @@ Connect a wallet, copy the full address shown in the TopBar, submit a write, and
 - 24-hour waiting period after policy purchase before claims are eligible
 - Future-dated incident timestamps are rejected on-chain
 
+## Capital accounting and expiry
+
+Paid and expired coverage follows explicit pool accounting rules:
+
+- A denied claim unlocks its full coverage; `total_backing_wei` is unchanged.
+- An approved claim unlocks its coverage, subtracts the actual payout from `total_backing_wei`, and returns any unpaid remainder to `available_wei`.
+- Approved-claim payouts are allocated proportionally across underwriters using each position's net backing immediately before settlement. Each position exposes `loss_wei` and `net_wei = deposited - withdrawn - loss`.
+- Anyone may call `expire_policy(policy_id)` after an active, unclaimed policy passes `end_time`. The policy becomes `expired`, its coverage is unlocked, and no payout is created.
+- Settlement and expiry reject locked-coverage inconsistencies instead of allowing unsigned underflow.
+
+The invariant maintained after deposits, withdrawals, payouts, denials, and expiry is:
+
+```text
+total_backing_wei = available_wei + locked_wei
+```
+
+Deterministic arithmetic tests live in `tests/direct/test_accounting_invariants.py`. They cover full and partial payout reconciliation, proportional loss allocation including rounding, loss-aware withdrawals, expiry release, and expiry rejection paths.
+
 ## Limitations
 
 - Experimental fixed payout cover, not licensed insurance

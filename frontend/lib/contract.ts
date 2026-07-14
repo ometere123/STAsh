@@ -194,6 +194,10 @@ export async function settleClaim(account: string, claimId: number): Promise<str
   return write(account, "settle_claim", [claimId]);
 }
 
+export async function expirePolicy(account: string, policyId: number): Promise<string> {
+  return write(account, "expire_policy", [policyId]);
+}
+
 // Read methods
 export async function getPool(poolId: number): Promise<Pool> {
   return read("get_pool", [poolId]) as Promise<Pool>;

@@ -107,6 +107,7 @@ class Pool:
 class UnderwriterPosition:
     deposited_wei: u256
     withdrawn_wei: u256
+    loss_wei: u256
 
 
 @allow_storage
@@ -159,6 +160,8 @@ class SlashOutageCover(gl.Contract):
     policies: TreeMap[u256, Policy]
     claims: TreeMap[u256, Claim]
     underwriter_positions: TreeMap[str, UnderwriterPosition]
+    underwriter_count: u256
+    underwriter_keys: TreeMap[u256, str]
     pool_ids: DynArray[u256]
 
     def __init__(self) -> None:
@@ -166,6 +169,7 @@ class SlashOutageCover(gl.Contract):
         self.pool_count = u256(0)
         self.policy_count = u256(0)
         self.claim_count = u256(0)
+        self.underwriter_count = u256(0)
 
     # =========================================================================
     # Pool Management
@@ -262,7 +266,10 @@ class SlashOutageCover(gl.Contract):
             self.underwriter_positions[pos_key] = UnderwriterPosition(
                 deposited_wei=value,
                 withdrawn_wei=u256(0),
+                loss_wei=u256(0),
             )
+            self.underwriter_count = self.underwriter_count + u256(1)
+            self.underwriter_keys[self.underwriter_count] = pos_key
 
     @gl.public.write
     def withdraw_available(self, pool_id: int, amount_wei: int) -> None:
@@ -276,7 +283,7 @@ class SlashOutageCover(gl.Contract):
             raise gl.vm.UserError("NOTHING_TO_WITHDRAW")
 
         pos = self.underwriter_positions[pos_key]
-        available_for_user = pos.deposited_wei - pos.withdrawn_wei
+        available_for_user = pos.deposited_wei - pos.withdrawn_wei - pos.loss_wei
         if amount_wei == u256(0) or amount_wei > available_for_user:
             raise gl.vm.UserError("NOTHING_TO_WITHDRAW")
 
@@ -579,6 +586,74 @@ class SlashOutageCover(gl.Contract):
     # Settlement
     # =========================================================================
 
+    def _allocate_underwriter_loss(
+        self, pool_id: u256, payout_wei: u256, backing_before: u256
+    ) -> None:
+        """Allocate a payout loss pro rata across net underwriter positions.
+
+        Integer division is deterministic. Any rounding remainder is assigned
+        to the first positive position so the allocated loss equals payout_wei.
+        """
+        if payout_wei == u256(0) or backing_before == u256(0):
+            return
+
+        prefix = str(pool_id) + ":"
+        allocated = u256(0)
+        for i in range(int(self.underwriter_count)):
+            key = self.underwriter_keys[u256(i + 1)]
+            if not key.startswith(prefix):
+                continue
+            pos = self.underwriter_positions[key]
+            net = pos.deposited_wei - pos.withdrawn_wei - pos.loss_wei
+            if net == u256(0):
+                continue
+            loss = payout_wei * net // backing_before
+            if loss > u256(0):
+                pos.loss_wei = pos.loss_wei + loss
+                self.underwriter_positions[key] = pos
+                allocated = allocated + loss
+
+        remainder = payout_wei - allocated
+        if remainder == u256(0):
+            return
+        for i in range(int(self.underwriter_count)):
+            key = self.underwriter_keys[u256(i + 1)]
+            if not key.startswith(prefix):
+                continue
+            pos = self.underwriter_positions[key]
+            net = pos.deposited_wei - pos.withdrawn_wei - pos.loss_wei
+            if net == u256(0):
+                continue
+            pos.loss_wei = pos.loss_wei + remainder
+            self.underwriter_positions[key] = pos
+            return
+        raise gl.vm.UserError("UNDERWRITER_ALLOCATION_INVARIANT")
+
+    @gl.public.write
+    def expire_policy(self, policy_id: int) -> None:
+        """Release coverage for an active policy that ended without a claim."""
+        policy_id = u256(policy_id)
+        if policy_id not in self.policies:
+            raise gl.vm.UserError("POLICY_NOT_FOUND")
+        policy = self.policies[policy_id]
+        if policy.status != POLICY_ACTIVE:
+            raise gl.vm.UserError("POLICY_NOT_ACTIVE")
+        if policy.claim_id != u256(0):
+            raise gl.vm.UserError("POLICY_ALREADY_CLAIMED")
+        now = u256(int(datetime.now(timezone.utc).timestamp()))
+        if now <= policy.end_time:
+            raise gl.vm.UserError("POLICY_NOT_EXPIRED")
+
+        pool = self.pools[policy.pool_id]
+        if policy.coverage_wei > pool.locked_wei:
+            raise gl.vm.UserError("LOCKED_COVERAGE_INVARIANT")
+        pool.locked_wei = pool.locked_wei - policy.coverage_wei
+        pool.available_wei = pool.available_wei + policy.coverage_wei
+        self.pools[policy.pool_id] = pool
+
+        policy.status = POLICY_EXPIRED
+        self.policies[policy_id] = policy
+
     @gl.public.write
     def settle_claim(self, claim_id: int) -> None:
         claim_id = u256(claim_id)
@@ -597,10 +672,17 @@ class SlashOutageCover(gl.Contract):
         if claim.status == CLAIM_APPROVED:
             payout_wei = self._calculate_payout(policy.coverage_wei, claim.payout_band)
 
+            if policy.coverage_wei > pool.locked_wei:
+                raise gl.vm.UserError("LOCKED_COVERAGE_INVARIANT")
             if payout_wei > pool.locked_wei:
-                payout_wei = pool.locked_wei
+                raise gl.vm.UserError("LOCKED_COVERAGE_INVARIANT")
 
+            backing_before = pool.total_backing_wei
+            if payout_wei > backing_before:
+                raise gl.vm.UserError("BACKING_INVARIANT")
+            self._allocate_underwriter_loss(claim.pool_id, payout_wei, backing_before)
             pool.locked_wei = pool.locked_wei - policy.coverage_wei
+            pool.total_backing_wei = pool.total_backing_wei - payout_wei
             remaining = policy.coverage_wei - payout_wei
             if remaining > u256(0):
                 pool.available_wei = pool.available_wei + remaining
@@ -626,6 +708,8 @@ class SlashOutageCover(gl.Contract):
                 _Recipient(claim.claimant).emit_transfer(value=payout_wei)
 
         else:
+            if policy.coverage_wei > pool.locked_wei:
+                raise gl.vm.UserError("LOCKED_COVERAGE_INVARIANT")
             pool.locked_wei = pool.locked_wei - policy.coverage_wei
             pool.available_wei = pool.available_wei + policy.coverage_wei
             pool.denied_count = pool.denied_count + u256(1)
@@ -775,6 +859,7 @@ class SlashOutageCover(gl.Contract):
                 "deposited_wei": "0",
                 "withdrawn_wei": "0",
                 "net_wei": "0",
+                "loss_wei": "0",
             }
         pos = self.underwriter_positions[pos_key]
         net = pos.deposited_wei - pos.withdrawn_wei
@@ -782,6 +867,7 @@ class SlashOutageCover(gl.Contract):
             "deposited_wei": str(pos.deposited_wei),
             "withdrawn_wei": str(pos.withdrawn_wei),
             "net_wei": str(net),
+            "loss_wei": str(pos.loss_wei),
         }
 
     @gl.public.view

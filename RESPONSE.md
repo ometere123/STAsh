@@ -117,3 +117,15 @@ Before Buy Cover is enabled, the Coverage Builder explicitly discloses and requi
 - the fact that GenLayer validators fetch and assess the page's actual content during claim review.
 
 The claim form repeats the evidence-fetch disclosure beside the Incident URL field, and My Policies shows the exact waiting-period end timestamp for each purchased policy.
+
+## Accounting remediation requested by review
+
+The contract now addresses the remaining economic-lifecycle issues:
+
+- approved payouts reduce `total_backing_wei` by the actual payout and preserve `total_backing_wei = available_wei + locked_wei`;
+- denied claims unlock coverage without reducing backing;
+- approved payouts allocate proportional `loss_wei` to every underwriter with net backing immediately before settlement;
+- underwriter `net_wei` subtracts realized loss, so loss cannot be withdrawn as if it were available capital; and
+- anyone can call `expire_policy()` after an active unclaimed policy passes its end time, releasing locked coverage and marking the policy `expired`.
+
+Executable deterministic coverage is in `tests/direct/test_accounting_invariants.py`; it passed together with the existing direct suite. These contract changes require a fresh deployment and a new StudioNet integration run before final resubmission.

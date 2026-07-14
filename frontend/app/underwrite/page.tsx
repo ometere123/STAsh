@@ -124,7 +124,7 @@ function UnderwriteContent() {
         {position && (
           <div className="p-3 panel-dark">
             <div className="label-text mb-2">Your Position</div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <div>
                 <div className="text-xs text-muted-steel">Deposited</div>
                 <div className="metric-small">{weiToGen(position.deposited_wei)}</div>
@@ -136,6 +136,10 @@ function UnderwriteContent() {
               <div>
                 <div className="text-xs text-muted-steel">Net</div>
                 <div className="metric-small text-signal-green">{weiToGen(position.net_wei)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-steel">Loss</div>
+                <div className="metric-small text-failure-red">{weiToGen(position.loss_wei)}</div>
               </div>
             </div>
           </div>

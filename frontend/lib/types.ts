@@ -61,6 +61,7 @@ export interface UnderwriterPosition {
   deposited_wei: string;
   withdrawn_wei: string;
   net_wei: string;
+  loss_wei: string;
 }
 
 export interface ServiceStatus {

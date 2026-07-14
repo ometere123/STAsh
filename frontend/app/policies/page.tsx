@@ -1,13 +1,38 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useWallet } from "@/providers/WalletProvider";
 import { useHolderPolicies } from "@/hooks/usePolicy";
 import { formatTimestamp, statusColor, weiToGen } from "@/lib/format";
+import { expirePolicy } from "@/lib/contract";
+import { useTransactions } from "@/providers/TransactionProvider";
+import { TxHashCard } from "@/components/shared/TxHashCard";
 
 export default function PoliciesPage() {
   const { address } = useWallet();
   const { policies, loading, error, refresh } = useHolderPolicies(address);
+  const { addTx, updateTx } = useTransactions();
+  const [submitting, setSubmitting] = useState(false);
+  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  async function releaseExpired(policyId: number) {
+    if (!address) return;
+    setSubmitting(true);
+    setActionError(null);
+    try {
+      const hash = await expirePolicy(address, policyId);
+      addTx(hash, `Release expired Policy #${policyId}`);
+      updateTx(hash, "confirmed");
+      setLastTxHash(hash);
+      await refresh();
+    } catch (e: any) {
+      setActionError(e.message || "Unable to release policy");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -40,6 +65,8 @@ export default function PoliciesPage() {
           <button onClick={refresh} className="btn-secondary text-xs py-1.5">Retry</button>
         </div>
       )}
+      {actionError && <div className="text-sm text-failure-red">{actionError}</div>}
+      {lastTxHash && <TxHashCard hash={lastTxHash} action="Policy Release" />}
 
       {!loading && !error && address && policies.length === 0 && (
         <div className="panel p-8 text-center space-y-3">
@@ -68,6 +95,11 @@ export default function PoliciesPage() {
             </div>
             {policy.status === "active" && (
               <Link href="/claims" className="btn-secondary inline-block text-xs py-1.5">File a Claim</Link>
+            )}
+            {policy.status === "active" && Date.now() / 1000 > policy.end_time && policy.claim_id === 0 && (
+              <button onClick={() => releaseExpired(policy.id)} disabled={submitting} className="btn-secondary ml-2 text-xs py-1.5">
+                Release Expired Coverage
+              </button>
             )}
           </div>
         ))}
