@@ -39,8 +39,8 @@ Frontend (Next.js)  →  GenLayer Contract (source of truth)
 ## Contract
 
 - **Network:** GenLayer StudioNet (Chain ID: 61999)
-- **Contract Address:** `0x72A76300b890D5D0b69E59d417a5Ff66cc0021cc`
-- **Explorer:** https://explorer-studio.genlayer.com/address/0x72A76300b890D5D0b69E59d417a5Ff66cc0021cc
+- **Contract Address:** `0xcd870A096A3BD90d85B2B805f6589EAF85D8398b`
+- **Explorer:** https://explorer-studio.genlayer.com/address/0xcd870A096A3BD90d85B2B805f6589EAF85D8398b
 
 ## Local Development
 
@@ -141,7 +141,7 @@ npm run test:wallet-flow
 
 The suite prints the contract and role addresses, verifies that each successful write is reflected by reads for the same address, inspects execution results rather than send success, and proves non-owner/non-holder calls revert. For reviewer evidence, retain the sanitized console output and replace abbreviated hashes with explorer links in the submission notes.
 
-> **Verified deployment target:** all app, script, and test references point to `0x72A76300b890D5D0b69E59d417a5Ff66cc0021cc`. Run the verification suite against this exact address before resubmitting.
+> **Verified deployment target:** all app, script, and test references point to `0xcd870A096A3BD90d85B2B805f6589EAF85D8398b`, deployed with the corrected accounting and expiry-release model.
 
 ### Manual Explorer Check
 

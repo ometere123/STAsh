@@ -14,7 +14,7 @@ import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 import { readFileSync } from "node:fs";
 
-const CONTRACT = "0x72A76300b890D5D0b69E59d417a5Ff66cc0021cc";
+const CONTRACT = "0xcd870A096A3BD90d85B2B805f6589EAF85D8398b";
 const TEST_POOL_ID = 2; // Vercel Deployments - kept separate from the seed script's pool #1
 
 const wallets = JSON.parse(readFileSync("test-wallets.local.json", "utf8"));

@@ -9,7 +9,8 @@ Requested by Joaquin on July 12, 2026 at 05:51.
 Resolved and verified on GenLayer StudioNet.
 
 - Network: GenLayer StudioNet (`61999`)
-- Patched contract: [`0x72A76300b890D5D0b69E59d417a5Ff66cc0021cc`](https://explorer-studio.genlayer.com/address/0x72A76300b890D5D0b69E59d417a5Ff66cc0021cc)
+- Patched contract: [`0xcd870A096A3BD90d85B2B805f6589EAF85D8398b`](https://explorer-studio.genlayer.com/address/0xcd870A096A3BD90d85B2B805f6589EAF85D8398b)
+- Deployment transaction: [`0xda3e17e7dc3e69402b8d5a21159dcd3fad0cff476d4a78badaee03cd5891773b`](https://explorer-studio.genlayer.com/tx/0xda3e17e7dc3e69402b8d5a21159dcd3fad0cff476d4a78badaee03cd5891773b)
 - On-chain owner: `0x9DCe0dc7005d6b92E03c27640081096cd36Dd468`
 
 ## End-to-end account flow

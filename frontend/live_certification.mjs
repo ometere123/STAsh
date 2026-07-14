@@ -3,7 +3,7 @@ import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 import { readFileSync, writeFileSync } from "node:fs";
 
-const CONTRACT = "0x72A76300b890D5D0b69E59d417a5Ff66cc0021cc";
+const CONTRACT = "0xcd870A096A3BD90d85B2B805f6589EAF85D8398b";
 const EXPLORER = "https://explorer-studio.genlayer.com/tx/";
 const wallets = JSON.parse(readFileSync("test-wallets.local.json", "utf8"));
 const ownerRole = wallets.owner ? "owner" : "claimant";

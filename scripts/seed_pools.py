@@ -43,7 +43,7 @@ POOLS = [
 if __name__ == "__main__":
     print("=" * 60)
     print("SLAsh Pool Seeding Instructions")
-    print("Contract: 0x72A76300b890D5D0b69E59d417a5Ff66cc0021cc")
+    print("Contract: 0xcd870A096A3BD90d85B2B805f6589EAF85D8398b")
     print("=" * 60)
     print()
     print("Execute these create_pool calls in GenLayer Studio:")
